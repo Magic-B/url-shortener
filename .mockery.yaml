@@ -1,0 +1,7 @@
+dir: "{{.InterfaceDir}}/mocks"
+filename: "mock_{{.InterfaceName}}.go"
+pkgname: mocks
+packages:
+  github.com/Magic-B/url-shortener/internal/http/handlers/url/save:
+    interfaces:
+      URLSaver:

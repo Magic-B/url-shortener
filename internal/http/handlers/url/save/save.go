@@ -26,6 +26,7 @@ type Response struct {
 	Alias  string `json:"alias,omitempty"`
 }
 
+//go:generate mockery
 type URLSaver interface {
 	SaveURL(urlToSave, alias string) (int64, error)
 }
