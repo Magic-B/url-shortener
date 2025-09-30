@@ -34,6 +34,7 @@ type URLSaver interface {
 func New(logger *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.url.save.New"
+
 		logger = logger.With(
 			slog.String("op", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
@@ -55,7 +56,6 @@ func New(logger *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 			validateErrs := err.(validator.ValidationErrors)
 
 			logger.Error("invalid request", slg.Error(err))
-
 			render.JSON(w, r, resp.ValidationErrors(validateErrs))
 
 			return
