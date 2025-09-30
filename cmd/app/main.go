@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/Magic-B/url-shortener/internal/config"
+	"github.com/Magic-B/url-shortener/internal/http/handlers/url/destroy"
 	"github.com/Magic-B/url-shortener/internal/http/handlers/url/redirect"
 	"github.com/Magic-B/url-shortener/internal/http/handlers/url/save"
 	httplogger "github.com/Magic-B/url-shortener/internal/http/middleware/logger"
@@ -52,6 +53,7 @@ func main() {
 
 	router.Post("/url", save.New(logger, storage))
 	router.Get("/{alias}", redirect.New(logger, storage))
+	router.Delete("/url/{alias}", destroy.New(logger, storage))
 
 	logger.Info("starting server", slog.String("address", cfg.Address))
 

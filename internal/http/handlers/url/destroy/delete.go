@@ -1,4 +1,4 @@
-package redirect
+package destroy
 
 import (
 	"errors"
@@ -13,19 +13,19 @@ import (
 	"github.com/go-chi/render"
 )
 
-type URLGetter interface {
-	GetURL(alias string) (string, error)
+type URLDeleter interface {
+	DeleteURL(alias string) error
 }
 
-func New(logger *slog.Logger, urlGetter URLGetter) http.HandlerFunc {
+func New(logger *slog.Logger, urlDeleter URLDeleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.url.redirect.New"
+		const op = "handlers.url.delete.New"
 
 		logger = logger.With(
 			slog.String("op", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
-		
+
 		alias := chi.URLParam(r, "alias")
 		if alias == "" {
 			logger.Info("alias is empty")
@@ -34,22 +34,23 @@ func New(logger *slog.Logger, urlGetter URLGetter) http.HandlerFunc {
 			return 
 		}
 
-		resUrl, err := urlGetter.GetURL(alias)
+		logger.Info("alias readed", slog.String("alias", alias))
+
+		err := urlDeleter.DeleteURL(alias)
 		if errors.Is(err, storage.ErrURLNotFound) {
 			logger.Info("url not found", slog.String("alias", alias))
 			render.JSON(w, r, resp.Error("not found"))
+			
+			return
+		}
+		if err != nil {
+			logger.Error("failed to delete url", slg.Error(err))
+			render.JSON(w, r, "internal error")
 
 			return 
 		}
-		if err != nil {
-			logger.Info("failed to get URL", slg.Error(err))
-			render.JSON(w, r, resp.Error("internal error"))
 
-			return
-		}
-
-		logger.Info("got URL", slog.String("url", resUrl))
-
-		http.Redirect(w, r, resUrl, http.StatusFound)
+		logger.Info("url deleted", slog.String("alias", alias))
+		render.Status(r, http.StatusOK)
 	}
 }
