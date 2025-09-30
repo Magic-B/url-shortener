@@ -1,12 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
 
 	"github.com/Magic-B/url-shortener/internal/config"
+	"github.com/Magic-B/url-shortener/internal/http/handlers/url/save"
 	httplogger "github.com/Magic-B/url-shortener/internal/http/middleware/logger"
 	"github.com/Magic-B/url-shortener/internal/storage/sqlite"
 	"github.com/Magic-B/url-shortener/pkg/logger/slg"
@@ -30,10 +31,7 @@ func main() {
 
 	logger := NewLogger(cfg.Env)
 
-	fmt.Println(logger)
-
 	storage, err := sqlite.New(cfg.StoragePath)
-	_ = storage
 
 	if err != nil {
 		logger.Error("failed to init storage", slg.Error(err))
@@ -51,7 +49,23 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	//TODO: Run server
+	router.Post("/url", save.New(logger, storage))
+
+	logger.Info("starting server", slog.String("address", cfg.Address))
+
+	srv := &http.Server{
+		Addr: cfg.Address,
+		Handler: router,
+		ReadTimeout: cfg.HttpServer.Timeout,
+		WriteTimeout: cfg.HttpServer.Timeout,
+		IdleTimeout: cfg.HttpServer.IdleTimeout,
+	}
+
+	if err := srv.ListenAndServe(); err != nil {
+		logger.Error("failed to start server")
+	}
+
+	logger.Error("server stopped")
 }
 
 func NewLogger(env string) *slog.Logger {
