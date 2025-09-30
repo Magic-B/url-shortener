@@ -3,9 +3,9 @@ package sqlite
 import (
 	"database/sql"
 	"errors"
-	"url-shortener/internal/storage"
-	"url-shortener/pkg/apperr"
-
+	
+	"github.com/Magic-B/url-shortener/internal/storage"
+	"github.com/Magic-B/url-shortener/pkg/apperr"
 	"github.com/mattn/go-sqlite3"
 )
 
@@ -92,4 +92,24 @@ func (s *Storage) GetURL(alias string) (string, error) {
 	}
 
 	return res, nil
+}
+
+func (s *Storage) DeleteURL(alias string) error {
+	const op = "storage.sqlite.DeleteURL"
+	
+	smtp, err := s.db.Prepare("DELETE FROM url WHERE alias = ?")
+
+	if err != nil {
+		return apperr.ErrWrapper(op, err)
+	}
+	
+	if _, err = smtp.Exec(alias); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return apperr.ErrWrapper(op, storage.ErrURLNotFound)
+		}
+
+		return apperr.ErrWrapper(op, err)
+	}
+
+	return nil
 }
